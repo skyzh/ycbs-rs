@@ -2,23 +2,25 @@ use crate::db::DB;
 
 use anyhow::Result;
 use sql_builder::SqlBuilder;
-use sqlite::{Connection, State};
+use sqlite::{Connection, State, Statement};
 use std::collections::HashMap;
+use std::cell::RefCell;
 
 const PRIMARY_KEY: &str = "y_id";
 
 #[derive(Default)]
-pub struct SQLite {
+pub struct SQLite<'a> {
     conn: Option<Connection>,
+    stmt: RefCell<Option<Statement<'a>>>,
 }
 
-impl SQLite {
+impl<'a> SQLite<'a> {
     pub fn new() -> Self {
-        SQLite { conn: None }
+        SQLite { conn: None, stmt: RefCell::new(None) }
     }
 }
 
-impl DB for SQLite {
+impl<'a> DB for SQLite<'a> {
     fn init(&mut self) -> Result<()> {
         self.conn = Some(sqlite::open("file:test.db")?);
         Ok(())
@@ -38,6 +40,8 @@ impl DB for SQLite {
         sql.values(&vals);
         let sql = sql.sql()?;
         let mut stmt = self.conn.as_ref().unwrap().prepare(sql)?;
+        self.stmt.replace(Some(stmt));
+        /*
         let marker = format!(":{}", PRIMARY_KEY);
         stmt.bind_by_name(&marker, key)?;
         for (key, value) in values {
@@ -46,6 +50,7 @@ impl DB for SQLite {
         }
         let state = stmt.next()?;
         assert!(state == State::Done);
+        */
         Ok(())
     }
 
