@@ -2,7 +2,7 @@ use crate::db::DB;
 
 use anyhow::Result;
 use sql_builder::SqlBuilder;
-use sqlite::{Connection, State};
+use sqlite::{Connection, State, OpenFlags};
 use std::collections::HashMap;
 
 const PRIMARY_KEY: &str = "y_id";
@@ -20,7 +20,9 @@ impl SQLite {
 
 impl DB for SQLite {
     fn init(&mut self) -> Result<()> {
-        self.conn = Some(sqlite::open("file:test.db")?);
+        let flags = OpenFlags::new().set_read_write().set_full_mutex();
+        let conn = Connection::open_with_flags("file:test.db", flags)?;
+        self.conn = Some(conn);
         Ok(())
     }
 
